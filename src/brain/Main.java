@@ -3,6 +3,7 @@ package brain;
 import brain.domain.Brain;
 import brain.math.ActivationFunction;
 import brain.math.Vector;
+import brain.misc.LayerDefinition;
 import brain.misc.TrainingExample;
 
 import javax.imageio.ImageIO;
@@ -19,13 +20,8 @@ import java.net.URL;
 public class Main {
 
     public static void main(String[] args) {
-        assert false;
-        System.out.println(new Brain(5));
-//        test();
-//        var brain = new Brain(1024, 64, 64, 2);
+        image();
     }
-
-    public static native void test();
 
     // TODO: domain from and to bytes (single file, instead of an entire folder)
     private static void image() {
@@ -58,9 +54,8 @@ public class Main {
         */
         /* */
         String format = "png";
-        String path = "pencil." + format;
-        URL url = Brain.class.getResource("../" + path);
-        assert url != null;
+        String path = STR."pencil.\{format}";
+        URL url = Main.class.getResource(STR."../\{path}");
         File file = new File(url.getFile().replace("%20", " "));
 
         try {
@@ -73,25 +68,30 @@ public class Main {
             //int hiddenNeurons = trainingExamples.length / (2 * (2 + 1));
             //int neuronsPerLayer = hiddenNeurons / 4;
             //Brain domain = new Brain(2, neuronsPerLayer, neuronsPerLayer, neuronsPerLayer, 1);
-            Brain brain = new Brain(2, 256, 256, 128, 3);
-            brain.setActivationFunction(ActivationFunction.SIGMOID);
+
+            Brain brain = new Brain(
+                    new LayerDefinition(2, ActivationFunction.RELU),
+                    new LayerDefinition(256, ActivationFunction.RELU),
+                    new LayerDefinition(256, ActivationFunction.RELU),
+                    new LayerDefinition(128, ActivationFunction.RELU),
+                    new LayerDefinition(3, ActivationFunction.RELU)
+            );
+
             brain.setLearningRate(1.0f);
-            brain.setMiniBatchSize(32);
-            //domain.setMiniBatchSize(Integer.MAX_VALUE);
+            brain.setMiniBatchSize(64);
+//            brain.setMiniBatchSize(Integer.MAX_VALUE);
 
             for (int j = 0; j < h; j++) {
                 float y = (float) j / h;
 
                 for (int i = 0; i < w; i++) {
                     float x = (float) i / w;
-
                     int rgb = image.getRGB(i, j);
                     float r = (rgb >> 16 & 0xFF) / 255.0f;
                     float g = (rgb >> 8 & 0xFF) / 255.0f;
                     float b = (rgb & 0xFF) / 255.0f;
-
                     //trainingExamples[j * w + i] = new TrainingExample(Vector.of(x, y), Vector.of(b));
-                    trainingExamples[j * w + i] = new TrainingExample(Vector.of(x, y), Vector.of(r, g, b));
+                  trainingExamples[j * w + i] = new TrainingExample(Vector.of(x, y), Vector.of(r, g, b));
                 }
             }
 
@@ -104,21 +104,19 @@ public class Main {
 
                 for (int i = 0; i < w; i++) {
                     float x = (float) i / w;
-
                     Vector output = brain.predict(x, y).mult(255.0f);
                     int r = (int) output.get(0);
                     int g = (int) output.get(1);
                     int b = (int) output.get(2);
-
                     int rgb = 0xFF000000 | r << 16 | g << 8 | b;
                     imageOut.setRGB(i, j, rgb);
                 }
             }
 
-            ImageIO.write(imageOut, format, new File(file.getParent() + "\\output." + format));
-
+            var pathname = STR."\{file.getParent()}\\output\{System.currentTimeMillis()}.\{format}";
+            ImageIO.write(imageOut, format, new File(pathname));
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         /* */
 

@@ -3,8 +3,10 @@ package brain.domain;
 import brain.math.ActivationFunction;
 import brain.math.Matrix;
 import brain.math.Vector;
+import brain.misc.LayerDefinition;
 import brain.misc.WeightBias;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.util.StringJoiner;
 
@@ -14,7 +16,10 @@ import java.util.StringJoiner;
  * 3CHIF
  */
 // Layer of Neurons
+@RequiredArgsConstructor
+@Getter
 public class Layer {
+
     /**
      * Weights and biases that will be multiplied with the activations of the neurons of the PREVIOUS layer
      * The activation, a_j, of the current neuron will be evaluated as W_j * a_[j-1] + b_j
@@ -28,7 +33,6 @@ public class Layer {
      * Always contains the linear activations of the previous prediction<br>
      * All zeros if there have not been any predictions yet
      */
-    @Getter
     private final Vector activationsLinear;
 
     /**
@@ -36,34 +40,41 @@ public class Layer {
      * Always contains the activations of the previous prediction<br>
      * All zeros if there have not been any predictions yet
      */
-    @Getter
     private final Vector activations;
 
+    private final ActivationFunction activationFunction;
+
+    public Layer(LayerDefinition layerDefinition,
+                 int previousLayerSize,
+                 float min,
+                 float maxExcl) {
+        this(
+                new WeightBias(
+                        new Matrix(previousLayerSize, layerDefinition.size()).fillWithRandomValues(min, maxExcl),
+                        new Vector(layerDefinition.size()).fillWithRandomValues(min, maxExcl)
+                ),
+                layerDefinition.activationFunction()
+        );
+    }
+
+    public Layer(WeightBias weightBias, ActivationFunction activationFunction) {
+        this(
+                weightBias,
+                new Vector(weightBias.outputs()),
+                new Vector(weightBias.outputs()),
+                activationFunction
+        );
+    }
+
     // Only for the InputLayer
-    protected Layer(int size) {
-        weightBias = null;
-        activationsLinear = new Vector(size);
-        activations = new Vector(size);
+    Layer(LayerDefinition layerDefinition) {
+        this(
+                null,
+                new Vector(layerDefinition.size()),
+                new Vector(layerDefinition.size()),
+                layerDefinition.activationFunction()
+        );
     }
-
-    public Layer(WeightBias weightBias) {
-        assert weightBias != null;
-
-        this.weightBias = weightBias;
-        this.activationsLinear = new Vector(weightBias.outputs());
-        this.activations = new Vector(weightBias.outputs());
-    }
-
-
-    public Layer(int previousLayerSize, int currentLayerSize, float min, float maxExcl) {
-        Matrix weights = new Matrix(previousLayerSize, currentLayerSize).fillWithRandomValues(min, maxExcl);
-        Vector biases = new Vector(currentLayerSize).fillWithRandomValues(min, maxExcl);
-
-        weightBias = new WeightBias(weights, biases);
-        activationsLinear = new Vector(currentLayerSize);
-        activations = new Vector(currentLayerSize);
-    }
-
 
     public void add(WeightBias delta) {
         weightBias.add(delta);
@@ -73,7 +84,7 @@ public class Layer {
         weightBias.sub(delta);
     }
 
-    public void feedforward(Layer next, ActivationFunction activationFunction) {
+    public void feedforward(Layer next) {
         Vector z = next.weightBias.apply(activations);
         Vector a = z.map(activationFunction::apply);
 
@@ -129,4 +140,5 @@ public class Layer {
 
         return joiner.toString();
     }
+
 }

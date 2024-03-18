@@ -1,13 +1,10 @@
 package brain.domain;
 
-import brain.math.ActivationFunction;
 import brain.math.Matrix;
 import brain.math.Vector;
-import brain.misc.MiniBatch;
-import brain.misc.TestExample;
-import brain.misc.TrainingExample;
-import brain.misc.WeightBias;
+import brain.misc.*;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.util.Arrays;
@@ -19,58 +16,30 @@ import java.util.function.BiConsumer;
  * Emilio Zottel
  * 3CHIF
  */
+@RequiredArgsConstructor
 @Getter
 @Setter
 public class Brain {
 
     public static final long SEED = 12345;
     public static final Random random = new Random(SEED);
-
     private final Layer[] layers;
-    private ActivationFunction activationFunction = ActivationFunction.SIGMOID;
     private float learningRate = 1.0f;
     private int miniBatchSize = 100;
 
     // Weight initialization:
     // https://machinelearningmastery.com/weight-initialization-for-deep-learning-neural-networks/
-    public Brain(int... layerSizes) {
-        assert layerSizes.length >= 2;
-        float min, maxExcl;
-        int previousLayerSize = layerSizes[0];
-        layers = new Layer[layerSizes.length];
-        layers[0] = new InputLayer(previousLayerSize);
+    public Brain(LayerDefinition... layerDefinitions) {
+        layers = new Layer[layerDefinitions.length];
+        layers[0] = new Layer(layerDefinitions[0]);
 
         for (int i = 1; i < size(); i++) {
-            int currentLayerSize = layerSizes[i];
-            // Minima and maxima are only for sigmoid and tanh
-            min = (float) (-Math.sqrt(6.0) / Math.sqrt(previousLayerSize + currentLayerSize));
-            //maxExcl = -min;
-            //min = (float) (-1.0 / Math.sqrt(previousLayerSize));
-            maxExcl = -min;
-            layers[i] = new Layer(previousLayerSize, currentLayerSize, min, maxExcl);
-
-            previousLayerSize = currentLayerSize;
+            var currentLayerDefinition = layerDefinitions[i];
+            int previousLayerSize = layers[i - 1].size();
+            float min = (float) (-Math.sqrt(6 / Math.sqrt(previousLayerSize + currentLayerDefinition.size())));
+            float maxExcl = -min;
+            layers[i] = new Layer(currentLayerDefinition, previousLayerSize, min, maxExcl);
         }
-    }
-
-    public Brain(WeightBias... weightBiases) {
-        assert weightBiases.length > 0;
-        layers = new Layer[weightBiases.length + 1];
-
-        WeightBias curr = weightBiases[0];
-        layers[0] = new InputLayer(curr.inputs());
-
-        for (int i = 1; i < weightBiases.length; i++) {
-            WeightBias next = weightBiases[i];
-            assert curr.outputs() == next.inputs() : STR."Layer \{i - 1} must have as many outputs as Layer \{i} has inputs. Sadly, \{curr.outputs()} does not equal \{next.inputs()}";
-
-            layers[i] = new Layer(next);
-            curr = next;
-        }
-    }
-
-    public float activation(float z) {
-        return activationFunction.apply(z);
     }
 
     /**
@@ -93,7 +62,7 @@ public class Brain {
 
         for (int i = 1; i < size(); i++) {
             Layer next = getLayer(i);
-            curr.feedforward(next, activationFunction);
+            curr.feedforward(next);
             curr = next;
         }
 
@@ -129,7 +98,7 @@ public class Brain {
 
         for (int i = outputLayerIndex() - 1; i >= 0; i--) {
             Layer prev = getLayer(i);
-            Vector nablaBiases = curr.getNablaBiases(error, activationFunction);
+            Vector nablaBiases = curr.getNablaBiases(error, prev.getActivationFunction());
             Matrix nablaWeights = nablaBiases.mult(prev.getActivations().toRowVector());
             deltas[i] = new WeightBias(nablaWeights, nablaBiases);
 

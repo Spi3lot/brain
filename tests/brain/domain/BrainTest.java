@@ -1,32 +1,51 @@
 package brain.domain;
 
+import brain.math.ActivationFunction;
 import brain.math.Matrix;
 import brain.math.Vector;
+import brain.misc.LayerDefinition;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
 public class BrainTest {
+
     @Test
     public void test() {
-        assertEquals(13002, new Brain(28 * 28, 16, 16, 10).totalSize());
+        assertEquals(
+                13002,
+                new Brain(
+                        new LayerDefinition(28 * 28, ActivationFunction.RELU),
+                        new LayerDefinition(16, ActivationFunction.RELU),
+                        new LayerDefinition(16, ActivationFunction.RELU),
+                        new LayerDefinition(10, ActivationFunction.RELU)
+                ).totalSize()
+        );
 
-        Brain brain = new Brain(28 * 28, 16, 10);
+        Brain brain = new Brain(
+                new LayerDefinition(28 * 28, ActivationFunction.RELU),
+                new LayerDefinition(16, ActivationFunction.RELU),
+                new LayerDefinition(10, ActivationFunction.RELU)
+        );
+
         Vector inputs = new Vector(28 * 28).fillWithRandomValues(-1, 1);
-        Vector expected = brain.predict(inputs);
+        Vector actual = brain.predict(inputs);
 
-        Vector actual = brain.getLayer(2)
+        Vector expected = brain.getLayer(2)
                 .getWeights()
                 .mult(brain.getLayer(1)
                         .getWeights()
                         .mult(inputs)
                         .add(brain.getLayer(1)
-                                .getBiases()
-                        ).map(brain.getActivationFunction()::apply))
+                                .getBiases())
+                        .map(brain.getLayer(1)
+                                .getActivationFunction()::apply))
                 .add(brain.getLayer(2)
                         .getBiases())
-                .map(brain.getActivationFunction()::apply);
+                .map(brain.getLayer(2)
+                        .getActivationFunction()::apply
+                );
 
         assertEquals(expected, actual);
     }
@@ -66,4 +85,5 @@ public class BrainTest {
         assertEquals(v1_v2r, v1.mult(v2.toRowVector()));
         assertThrows(AssertionError.class, () -> v2.toRowVector().mult(v1));
     }
+
 }
