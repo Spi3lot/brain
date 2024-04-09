@@ -5,6 +5,7 @@ import brain.math.ActivationFunction;
 import brain.math.Vector;
 import brain.misc.LayerDefinition;
 import brain.misc.TrainingExample;
+import processing.core.PApplet;
 
 import javax.imageio.ImageIO;
 import javax.imageio.stream.FileImageInputStream;
@@ -17,16 +18,54 @@ import java.net.URL;
  * @author : Emilio Zottel (5AHIF)
  * @since : 13.11.2023, Mo.
  **/
-public class Main {
+public class Main extends PApplet {
+
+    private static final boolean WRITE_TO_FILE = false;
+
+    private final Brain brain = new Brain(
+            new LayerDefinition(8, ActivationFunction.LINEAR),
+            new LayerDefinition(32, ActivationFunction.RELU),
+            new LayerDefinition(128, ActivationFunction.RELU),
+            new LayerDefinition(32, ActivationFunction.RELU),
+            new LayerDefinition(3, ActivationFunction.SIGMOID)
+    );
+
+    private final String imageName = "itdogodown";
+
+    private final String format = "png";
+
+    private final String path = STR."../\{imageName}.\{format}";
+
+    private File file;
+
+    private BufferedImage image;
+
+    private BufferedImage imageOut;
+
+    private TrainingExample[] trainingExamples;
 
     public static void main(String[] args) {
-        image();
+        PApplet.main(Main.class, args);
     }
 
-    // TODO: domain from and to bytes (single file, instead of an entire folder)
-    private static void image() {
-        System.out.println("Starting...");
+    private static float[] fourierSeries2(float x, float y) {
+        x *= TWO_PI;
+        y *= TWO_PI;
 
+        return new float[]{
+                sin(x),
+                cos(x),
+                sin(y),
+                cos(y),
+                sin(x * 2),
+                cos(x * 2),
+                sin(y * 2),
+                cos(y * 2)
+        };
+    }
+
+    @Override
+    public void settings() {
         /*
         Brain domain = new Brain(28 * 28, 16, 10);
         writeToFolder("resources/Test");
@@ -52,73 +91,45 @@ public class Main {
         System.out.println(output.argmax());
         System.out.println(output);
         */
-        /* */
-        String format = "png";
-        String path = STR."pencil.\{format}";
-        URL url = Main.class.getResource(STR."../\{path}");
-        File file = new File(url.getFile().replace("%20", " "));
+
+        URL url = Main.class.getResource(path);
+        file = new File(url.getFile().replace("%20", " "));
 
         try {
-            BufferedImage image = ImageIO.read(new FileImageInputStream(file));
-            int w = image.getWidth();
-            int h = image.getHeight();
-            BufferedImage imageOut = new BufferedImage(w, h, image.getType());
-
-            TrainingExample[] trainingExamples = new TrainingExample[w * h];
-            //int hiddenNeurons = trainingExamples.length / (2 * (2 + 1));
-            //int neuronsPerLayer = hiddenNeurons / 4;
-            //Brain domain = new Brain(2, neuronsPerLayer, neuronsPerLayer, neuronsPerLayer, 1);
-
-            Brain brain = new Brain(
-                    new LayerDefinition(2, ActivationFunction.RELU),
-                    new LayerDefinition(256, ActivationFunction.RELU),
-                    new LayerDefinition(256, ActivationFunction.RELU),
-                    new LayerDefinition(128, ActivationFunction.RELU),
-                    new LayerDefinition(3, ActivationFunction.RELU)
-            );
-
-            brain.setLearningRate(1.0f);
-            brain.setMiniBatchSize(64);
-//            brain.setMiniBatchSize(Integer.MAX_VALUE);
-
-            for (int j = 0; j < h; j++) {
-                float y = (float) j / h;
-
-                for (int i = 0; i < w; i++) {
-                    float x = (float) i / w;
-                    int rgb = image.getRGB(i, j);
-                    float r = (rgb >> 16 & 0xFF) / 255.0f;
-                    float g = (rgb >> 8 & 0xFF) / 255.0f;
-                    float b = (rgb & 0xFF) / 255.0f;
-                    //trainingExamples[j * w + i] = new TrainingExample(Vector.of(x, y), Vector.of(b));
-                  trainingExamples[j * w + i] = new TrainingExample(Vector.of(x, y), Vector.of(r, g, b));
-                }
-            }
-
-            for (int i = 0; i < 10; i++) {
-                brain.train(trainingExamples);
-            }
-
-            for (int j = 0; j < h; j++) {
-                float y = (float) j / h;
-
-                for (int i = 0; i < w; i++) {
-                    float x = (float) i / w;
-                    Vector output = brain.predict(x, y).mult(255.0f);
-                    int r = (int) output.get(0);
-                    int g = (int) output.get(1);
-                    int b = (int) output.get(2);
-                    int rgb = 0xFF000000 | r << 16 | g << 8 | b;
-                    imageOut.setRGB(i, j, rgb);
-                }
-            }
-
-            var pathname = STR."\{file.getParent()}\\output\{System.currentTimeMillis()}.\{format}";
-            ImageIO.write(imageOut, format, new File(pathname));
+            image = ImageIO.read(new FileImageInputStream(file));
+            imageOut = new BufferedImage(width, height, image.getType());
+            size(image.getWidth(), image.getHeight());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        /* */
+    }
+
+    // TODO: domain from and to bytes (single file, instead of an entire folder)
+    public void setup() {
+        trainingExamples = new TrainingExample[width * height];
+        brain.setLearningRate(1e-3f);
+        brain.setMiniBatchSize(32);
+//            brain.setMiniBatchSize(Integer.MAX_VALUE);
+//        int hiddenNeurons = trainingExamples.length / (2 * (2 + 1));
+//        int neuronsPerLayer = hiddenNeurons / 4;
+//        Brain domain = new Brain(2, neuronsPerLayer, neuronsPerLayer, neuronsPerLayer, 1);
+
+        for (int j = 0; j < height; j++) {
+            float y = (float) j / height;
+
+            for (int i = 0; i < width; i++) {
+                float x = (float) i / width;
+                int rgb = image.getRGB(i, j);
+                float r = (rgb >> 16 & 0xFF) / 255.0f;
+                float g = (rgb >> 8 & 0xFF) / 255.0f;
+                float b = (rgb & 0xFF) / 255.0f;
+                //trainingExamples[j * w + i] = new TrainingExample(Vector.of(x, y), Vector.of(b));
+                trainingExamples[j * width + i] = new TrainingExample(
+                        Vector.of(fourierSeries2(x, y)),
+                        Vector.of(r, g, b)
+                );
+            }
+        }
 
         /* * /
         Brain domain = new Brain(2, 2, 1);
@@ -146,7 +157,41 @@ public class Main {
         System.out.println(domain.predict(1, 0).get(0));
         System.out.println(domain.predict(1, 1).get(0));
         /* */
-        System.out.println("Done");
+    }
+
+    @Override
+    public void draw() {
+        brain.train(trainingExamples);
+        System.out.println(STR."Finished epoch \{frameCount}");
+        predictImage();
+
+        if (WRITE_TO_FILE) {
+            try {
+                var pathname = STR."\{file.getParent()}\\output\{System.currentTimeMillis()}.\{format}";
+                ImageIO.write(imageOut, format, new File(pathname));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private void predictImage() {
+        loadPixels();
+
+        for (int j = 0; j < height; j++) {
+            float y = (float) j / height;
+
+            for (int i = 0; i < width; i++) {
+                float x = (float) i / width;
+                Vector output = brain.predict(fourierSeries2(x, y)).mult(255.0f);
+                int r = (int) output.get(0);
+                int g = (int) output.get(1);
+                int b = (int) output.get(2);
+                pixels[j * width + i] = color(r, g, b);
+            }
+        }
+
+        updatePixels();
     }
 
 }

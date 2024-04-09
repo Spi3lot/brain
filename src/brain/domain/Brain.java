@@ -22,7 +22,7 @@ import java.util.function.BiConsumer;
 public class Brain {
 
     public static final long SEED = 12345;
-    public static final Random random = new Random(SEED);
+    public static final Random RANDOM = new Random();  // SEED not used here
     private final Layer[] layers;
     private float learningRate = 1.0f;
     private int miniBatchSize = 100;
@@ -58,7 +58,7 @@ public class Brain {
 
     public Vector predict(Vector input) {
         Layer curr = getInputLayer();
-        curr.setActivations(input);
+        curr.activate(input);
 
         for (int i = 1; i < size(); i++) {
             Layer next = getLayer(i);
