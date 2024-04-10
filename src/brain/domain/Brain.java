@@ -58,7 +58,7 @@ public class Brain {
 
     public Vector predict(Vector input) {
         Layer curr = getInputLayer();
-        curr.setActivations(input);
+        curr.activate(input);
 
         for (int i = 1; i < size(); i++) {
             Layer next = getLayer(i);

@@ -85,11 +85,12 @@ public class Layer {
     }
 
     public void feedforward(Layer next) {
-        Vector z = next.weightBias.apply(activations);
-        Vector a = z.map(activationFunction::apply);
+        next.activate(next.weightBias.apply(activations));
+    }
 
-        next.setActivationsLinear(z);
-        next.setActivations(a);
+    public void activate(Vector activationsLinear) {
+        setActivationsLinear(activationsLinear);
+        setActivations(activationsLinear.map(activationFunction::apply));
     }
 
     public Vector getNablaBiases(Vector deltas, ActivationFunction activationFunction) {
@@ -113,11 +114,11 @@ public class Layer {
         //return weightBias.outputs();  // Same as above
     }
 
-    public void setActivationsLinear(Vector activationsLinear) {
+    private void setActivationsLinear(Vector activationsLinear) {
         this.activationsLinear.setAll(activationsLinear);
     }
 
-    public void setActivations(Vector activations) {
+    private void setActivations(Vector activations) {
         this.activations.setAll(activations);
     }
 

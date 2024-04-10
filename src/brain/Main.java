@@ -13,6 +13,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
+import static processing.core.PApplet.cos;
+import static processing.core.PApplet.sin;
+
 /**
  * @author : Emilio Zottel (5AHIF)
  * @since : 13.11.2023, Mo.
@@ -70,14 +73,14 @@ public class Main {
             //Brain domain = new Brain(2, neuronsPerLayer, neuronsPerLayer, neuronsPerLayer, 1);
 
             Brain brain = new Brain(
-                    new LayerDefinition(2, ActivationFunction.RELU),
-                    new LayerDefinition(256, ActivationFunction.RELU),
-                    new LayerDefinition(256, ActivationFunction.RELU),
-                    new LayerDefinition(128, ActivationFunction.RELU),
-                    new LayerDefinition(3, ActivationFunction.RELU)
+                    new LayerDefinition(2, ActivationFunction.LINEAR),
+                    new LayerDefinition(128, ActivationFunction.LINEAR),
+                    new LayerDefinition(128, ActivationFunction.LINEAR),
+                    new LayerDefinition(128, ActivationFunction.LINEAR),
+                    new LayerDefinition(3, ActivationFunction.LINEAR)
             );
 
-            brain.setLearningRate(1.0f);
+            brain.setLearningRate(1e-3f);
             brain.setMiniBatchSize(64);
 //            brain.setMiniBatchSize(Integer.MAX_VALUE);
 
@@ -91,12 +94,16 @@ public class Main {
                     float g = (rgb >> 8 & 0xFF) / 255.0f;
                     float b = (rgb & 0xFF) / 255.0f;
                     //trainingExamples[j * w + i] = new TrainingExample(Vector.of(x, y), Vector.of(b));
-                  trainingExamples[j * w + i] = new TrainingExample(Vector.of(x, y), Vector.of(r, g, b));
+                    trainingExamples[j * w + i] = new TrainingExample(
+                            Vector.of(x, y),
+                            Vector.of(r, g, b)
+                    );
                 }
             }
 
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 1; i++) {
                 brain.train(trainingExamples);
+                System.out.println(STR."Finished epoch \{i}");
             }
 
             for (int j = 0; j < h; j++) {
@@ -108,6 +115,7 @@ public class Main {
                     int r = (int) output.get(0);
                     int g = (int) output.get(1);
                     int b = (int) output.get(2);
+                    System.out.println(b);
                     int rgb = 0xFF000000 | r << 16 | g << 8 | b;
                     imageOut.setRGB(i, j, rgb);
                 }
@@ -147,6 +155,19 @@ public class Main {
         System.out.println(domain.predict(1, 1).get(0));
         /* */
         System.out.println("Done");
+    }
+
+    private static float[] fourierSeries(float x, float y) {
+        return new float[]{
+                sin(x),
+                cos(x),
+                sin(y),
+                cos(y),
+                sin(x * 2),
+                cos(x * 2),
+                sin(y * 2),
+                cos(y * 2)
+        };
     }
 
 }

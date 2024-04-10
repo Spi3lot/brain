@@ -12,6 +12,10 @@ import java.util.function.UnaryOperator;
 @AllArgsConstructor
 public enum ActivationFunction {
 
+    LINEAR(
+            x -> x,
+            _ -> 1.0f
+    ),
     SIGMOID(ActivationFunction::sigmoid, x -> {
         float s = sigmoid(x);
         return s * (1.0f - s);
