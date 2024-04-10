@@ -2,7 +2,7 @@ package brain.misc;
 
 import java.util.Arrays;
 
-import static brain.domain.Brain.random;
+import static brain.domain.Brain.RANDOM;
 
 public class MiniBatch {
     private final TrainingExample[] trainingExamples;
@@ -22,7 +22,7 @@ public class MiniBatch {
         T[] arr = array.clone();
 
         for (int i = arr.length - 1; i >= 1; i--) {
-            int idx = random.nextInt(i + 1);
+            int idx = RANDOM.nextInt(i + 1);
             T temp = arr[idx];
             arr[idx] = arr[i];
             arr[i] = temp;

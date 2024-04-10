@@ -181,7 +181,7 @@ public class Vector {
     }
 
     public Vector fillWithRandomValues(float min, float maxExclusive) {
-        setEach(_ -> Brain.random.nextFloat(maxExclusive - min) + min);
+        setEach(_ -> Brain.RANDOM.nextFloat(maxExclusive - min) + min);
         return this;
     }
 }
