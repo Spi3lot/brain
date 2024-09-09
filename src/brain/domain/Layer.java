@@ -1,14 +1,14 @@
 package brain.domain;
 
-import brain.math.ActivationFunction;
-import brain.math.Matrix;
-import brain.math.Vector;
+import brain.math.*;
 import brain.misc.LayerDefinition;
 import brain.misc.WeightBias;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.StringJoiner;
+import java.util.function.BiFunction;
+import java.util.function.IntFunction;
 
 /**
  * 16.03.2022
@@ -47,31 +47,36 @@ public class Layer {
     public Layer(LayerDefinition layerDefinition,
                  int previousLayerSize,
                  float min,
-                 float maxExcl) {
+                 float maxExcl,
+                 IntFunction<Vector> vectorConstructor,
+                 BiFunction<Integer, Integer, Matrix> matrixConstructor) {
         this(
                 new WeightBias(
-                        new Matrix(previousLayerSize, layerDefinition.size()).fillWithRandomValues(min, maxExcl),
-                        new Vector(layerDefinition.size()).fillWithRandomValues(min, maxExcl)
+                        matrixConstructor.apply(previousLayerSize, layerDefinition.size()).fillWithRandomValues(min, maxExcl),
+                        vectorConstructor.apply(layerDefinition.size()).fillWithRandomValues(min, maxExcl)
                 ),
-                layerDefinition.activationFunction()
+                layerDefinition.activationFunction(),
+                vectorConstructor
         );
     }
 
-    public Layer(WeightBias weightBias, ActivationFunction activationFunction) {
+    public Layer(WeightBias weightBias,
+                 ActivationFunction activationFunction,
+                 IntFunction<Vector> vectorContructor) {
         this(
                 weightBias,
-                new Vector(weightBias.outputs()),
-                new Vector(weightBias.outputs()),
+                vectorContructor.apply(weightBias.outputs()),
+                vectorContructor.apply(weightBias.outputs()),
                 activationFunction
         );
     }
 
     // Only for the InputLayer
-    Layer(LayerDefinition layerDefinition) {
+    Layer(LayerDefinition layerDefinition, IntFunction<Vector> vectorConstructor) {
         this(
                 null,
-                new Vector(layerDefinition.size()),
-                new Vector(layerDefinition.size()),
+                vectorConstructor.apply(layerDefinition.size()),
+                vectorConstructor.apply(layerDefinition.size()),
                 layerDefinition.activationFunction()
         );
     }
@@ -130,10 +135,9 @@ public class Layer {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
-
     @Override
     public String toString() {
-        StringJoiner joiner = new StringJoiner("\n");
+        var joiner = new StringJoiner("\n");
 
         for (int i = 0; i < size(); i++) {
             joiner.add(STR."\{activations.get(i)}");

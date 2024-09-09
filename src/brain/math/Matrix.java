@@ -1,99 +1,59 @@
 package brain.math;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 
 /**
- * 16.03.2022
- * Emilio Zottel
- * 3CHIF
+ * @author Emilio Zottel
+ * @since 09.09.2024, Mo.
  */
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode
-public class Matrix {
-    public final int cols, rows;
-    private final Vector[] values;
+public abstract class Matrix {
 
-    public Matrix(int cols, int rows) {
-        this.cols = cols;  // "input size" (for matrix multiplication)
-        this.rows = rows;  // "output size" (for matrix multiplication)
-        this.values = Vector.makeArray(cols, rows);
-    }
+    public final int cols;  // "input size" (for matrix multiplication)
 
-    public Matrix(Vector... values) {
-        assert values != null;
+    public final int rows;  // "output size" (for matrix multiplication)
 
+    protected final Vector[] values;
+
+    protected Matrix(Vector... values) {
+        Objects.requireNonNull(values);
         this.rows = values.length;
         this.cols = (values.length == 0) ? 0 : values[0].size();
         this.values = values;
     }
 
+    public abstract Matrix add(Matrix m);
 
-    public Matrix add(Matrix m) {
-        assert rows == m.rows;  // cols are checked in Vector.add()
-        return withEachRow(j -> getRow(j).add(m.getRow(j)));
-    }
+    public abstract Matrix sub(Matrix m);
 
-    public Matrix sub(Matrix m) {
-        assert rows == m.rows;  // cols are checked in Vector.sub()
-        return withEachRow(j -> getRow(j).sub(m.getRow(j)));
-    }
+    public abstract Matrix mult(float factor);
 
-    public Matrix mult(float factor) {
-        return withEachRow(j -> getRow(j).mult(factor));
-    }
+    public abstract Vector mult(Vector v);
 
-    public Vector mult(Vector v) {
-        v.check(cols, "Matrix column amount must match vector size");
-        return new Vector(rows).withEach(j -> v.dot(getRow(j)));
-    }
+    public abstract Matrix mult(Matrix m);
 
-    public Matrix mult(Matrix m) {
-        assert cols == m.rows;
-        Matrix result = new Matrix(m.cols, rows);
-        Matrix mTransposed = m.transpose();  // More efficient than calling getCol(i) over and over again
+    public abstract Matrix div(float divisor);
 
-        for (int j = 0; j < rows; j++) {
-            Vector row = getRow(j);
-            float[] resultRow = new float[m.cols];
+    public abstract Matrix multHadamard(Matrix m);
 
-            for (int i = 0; i < m.cols; i++) {
-                // Reading the transposed columns (which are now rows) from the top down
-                // Technically they should be read from the bottom up, but since we're transposing, which is a
-                // 90° rotation instead of a 270° rotation, the effect cancels out and we can just read from the top down
-                resultRow[i] = row.dot(mTransposed.getRow(i));
-            }
+    public abstract Matrix transpose();
 
-            result.setRow(j, Vector.of(resultRow));
-        }
+    public abstract void setAll(float... values);
 
-        return result;
-    }
+    public abstract Vector getCol(int i);
 
-    public Matrix div(float divisor) {
-        return withEachRow(j -> getRow(j).div(divisor));
-    }
-
-    public Matrix multHadamard(Matrix m) {
-        assert rows == m.rows;  // cols are checked in Vector.mult()
-        return withEachRow(j -> getRow(j).mult(m.getRow(j)));
-    }
-
-    public Matrix transpose() {
-        // Notice: Matrix constructor is reversed, normally it is used like 'new Matrix(cols, rows)'
-        return new Matrix(rows, cols).withEachRow(this::getCol);
-    }
-
-    public Vector getCol(int i) {
-        return new Vector(rows).withEach(j -> get(i, j));
-    }
+    public abstract Matrix withEachRow(IntFunction<Vector> function);
 
     public void setCol(int i, Vector values) {
-        assert values.size() == rows : "Vector size must match matrix row amount";
+        values.check(rows, "Vector size must match matrix row amount");
         forEachRow(j -> set(i, j, values.get(j)));
     }
 
@@ -102,7 +62,7 @@ public class Matrix {
     }
 
     public void setRow(int j, Vector values) {
-        assert values.size() == cols : "Vector size must match matrix column amount";
+        values.check(cols, "Vector size must match matrix column amount");
         this.values[j] = values;
     }
 
@@ -112,16 +72,6 @@ public class Matrix {
 
     public void set(int i, int j, float value) {
         values[j].set(i, value);
-    }
-
-    public void setAll(float... values) {
-        assert values.length == cols * rows : "Amount of values must equal 'matrix column amount * matrix row amount'";
-        forEachRow(j -> setRow(j, Vector.of(Arrays.copyOfRange(values, j * cols, (j + 1) * cols))));
-        /*
-        for (int v = 0; v < values.length; v++) {
-            set(v % cols, v / cols, values[v]);
-        }
-        */
     }
 
     public void forEachRow(IntConsumer consumer) {
@@ -138,18 +88,11 @@ public class Matrix {
         forEachRow(j -> setRow(j, function.apply(j)));
     }
 
-    public Matrix withEachRow(IntFunction<Vector> function) {
-        Matrix m = new Matrix(cols, rows);
-        m.setEachRow(function);
-
-        return m;
-    }
 
     public Matrix fillWithRandomValues(float min, float maxExclusive) {
-        forEachRow((j, row) -> row.fillWithRandomValues(min, maxExclusive));
+        forEachRow((_, row) -> row.fillWithRandomValues(min, maxExclusive));
         return this;
     }
-
 
     // TODO: matrix from and to bytes
     @Override
@@ -171,4 +114,5 @@ public class Matrix {
         sb.deleteCharAt(sb.length() - 1);
         return sb.toString();
     }
+
 }

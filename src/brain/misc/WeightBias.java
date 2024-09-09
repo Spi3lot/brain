@@ -2,18 +2,23 @@ package brain.misc;
 
 import brain.math.Matrix;
 import brain.math.Vector;
+import lombok.Getter;
 
 /**
  * 17.07.2022
  * Emilio Zottel
  * 3CHIF-4AHIF
  */
+@Getter
 public class WeightBias {
+
     private Matrix weights;
     private Vector biases;
 
     public WeightBias(Matrix weights, Vector biases) {
-        assert weights.rows == biases.size();
+        if (weights.rows != biases.size()) {
+            throw new IllegalArgumentException("Matrix row amount must match vector size");
+        }
 
         this.weights = weights;
         this.biases = biases;
@@ -21,7 +26,10 @@ public class WeightBias {
 
     public static void add(WeightBias[] arr1, WeightBias[] arr2) {
         int len = arr1.length;
-        assert len == arr2.length;
+
+        if (len != arr2.length) {
+            throw new IllegalArgumentException("Array lengths must match");
+        }
 
         for (int i = 0; i < len; i++) {
             WeightBias wb1 = arr1[i];
@@ -51,10 +59,6 @@ public class WeightBias {
         //return biases.size();  // Same as above
     }
 
-    public Matrix getWeights() {
-        return weights;
-    }
-
     /*
     // TODO maybe?
     public static WeightBias[] makeArray(int... layerSizes) {
@@ -67,10 +71,6 @@ public class WeightBias {
         return arr;
     }
      */
-
-    public Vector getBiases() {
-        return biases;
-    }
 
     public Vector apply(Vector activations) {
         return weights.mult(activations).add(biases);
@@ -90,4 +90,5 @@ public class WeightBias {
         weights = weights.mult(divisor);
         biases = biases.mult(divisor);
     }
+
 }

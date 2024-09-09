@@ -38,6 +38,7 @@ public enum ActivationFunction {
     );
 
     private final UnaryOperator<Float> function;
+
     private final UnaryOperator<Float> derivative;
 
     private static float exp(float x) {

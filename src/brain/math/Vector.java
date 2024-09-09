@@ -10,106 +10,59 @@ import java.util.function.IntFunction;
 import java.util.function.UnaryOperator;
 
 /**
- * 16.03.2022
- * Emilio Zottel
- * 3CHIF
+ * @author Emilio Zottel
+ * @since 09.09.2024, Mo.
  */
 @EqualsAndHashCode
 @ToString
-public class Vector {
-    private final float[] values;
+public abstract class Vector {
 
-    public Vector(int size) {
+    protected final float[] values;
+
+    protected Vector(int size) {
         values = new float[size];
     }
 
-    // private and float[] instead of float... to avoid possible overlappings with the public brain.math.Vector(int) constructor
-    private Vector(float[] values) {
+    // protected and float[] instead of float... to avoid possible overlappings with the protected brain.math.Vector(int) constructor
+    protected Vector(float[] values) {
         this.values = values;
     }
 
-    /**
-     * Useful in Matrix.java when reading n floats per row and constructing a Vector using these floats
-     */
-    public static Vector of(float... values) {
-        return new Vector(values);
-    }
-
-    public static Vector[] makeArray(int cols, int rows) {
-        Vector[] arr = new Vector[rows];
+    protected static Vector[] makeArray(int cols, int rows, IntFunction<Vector> constructor) {
+        var arr = new Vector[rows];
 
         for (int i = 0; i < rows; i++) {
-            arr[i] = new Vector(cols);
+            arr[i] = constructor.apply(cols);
         }
 
         return arr;
     }
 
+    public abstract Matrix toRowVector();
 
-    protected void check(int len, String message) {
-        assert size() == len : message;
-    }
+    public abstract Vector negate();
 
-    private void check(int len) {
-        check(len, "Vector sizes must match");
-    }
+    public abstract Vector add(Vector v);
 
-    public Matrix toRowVector() {
-        return new Matrix(this);
-    }
+    public abstract Vector sub(Vector v);
 
-    public Vector negate() {
-        return map(e -> -e);
-    }
+    public abstract Vector mult(float factor);
 
-    public Vector add(Vector v) {
-        return withEach(i -> get(i) + v.get(i), v.size());
-    }
+    public abstract Vector mult(Vector v);
 
-    public Vector sub(Vector v) {
-        return withEach(i -> get(i) - v.get(i), v.size());
-    }
+    public abstract Matrix mult(Matrix rowVector);
 
-    public Vector mult(float factor) {
-        return map(e -> e * factor);
-    }
+    public abstract Vector div(float divisor);
 
-    public Vector mult(Vector v) {
-        return withEach(i -> get(i) * v.get(i), v.size());
-    }
+//    public Vector mult(Matrix m) {
+//        return m.transpose().mult(this);
+//    }
 
-    /**
-     * Multiplies this column vector with a row vector and returns the resulting matrix
-     *
-     * @param rowVector the row vector that this column vector should be multiplied with
-     * @return the resulting matrix
-     */
-    public Matrix mult(Matrix rowVector) {
-        assert rowVector.rows == 1 : "Parameter m must be a row vector, which means it must have exactly 1 row";
-        Matrix result = new Matrix(rowVector.cols, size());  // size() == rows of this column vector
-        Vector row = rowVector.getRow(0);
+    public abstract float dot(Vector v);
 
-        return result.withEachRow(j -> row.mult(get(j)));
-    }
+    public abstract void setAll(Vector v);
 
-    //public Vector mult(Matrix m) {
-    //    return m/*.transpose()*/.mult(this);
-    //}
-
-    public Vector div(float divisor) {
-        return map(e -> e / divisor);
-    }
-
-    public float dot(Vector v) {
-        check(v.size());
-        float result = 0;
-
-        for (int i = 0; i < size(); i++) {
-            result += get(i) * v.get(i);
-        }
-
-        return result;
-    }
+    public abstract Vector withEach(IntFunction<Float> function);
 
     public float sum() {
         float[] result = {0.0f};
@@ -143,10 +96,6 @@ public class Vector {
         values[i] = value;
     }
 
-    public void setAll(Vector v) {
-        assert size() == v.size();
-        setEach(v::get);
-    }
 
     public void setEach(IntFunction<Float> function) {
         for (int i = 0; i < size(); i++) {
@@ -154,12 +103,6 @@ public class Vector {
         }
     }
 
-    public Vector withEach(IntFunction<Float> function) {
-        Vector v = new Vector(size());
-        v.setEach(function);
-
-        return v;
-    }
 
     public Vector withEach(IntFunction<Float> function, int len) {
         check(len);
@@ -184,4 +127,15 @@ public class Vector {
         setEach(_ -> Brain.RANDOM.nextFloat(maxExclusive - min) + min);
         return this;
     }
+
+    protected void check(int len) {
+        check(len, "Vector sizes must match");
+    }
+
+    protected void check(int len, String message) {
+        if (len != size()) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
 }

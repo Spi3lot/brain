@@ -4,41 +4,48 @@ import brain.math.Matrix;
 import brain.math.Vector;
 import brain.misc.*;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.util.Arrays;
 import java.util.Random;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.IntFunction;
 
 /**
  * 16.03.2022
  * Emilio Zottel
  * 3CHIF
  */
-@RequiredArgsConstructor
+
 @Getter
 @Setter
 public class Brain {
 
     public static final long SEED = 12345;
+
     public static final Random RANDOM = new Random();  // SEED not used here
+
     private final Layer[] layers;
+
     private float learningRate = 1.0f;
+
     private int miniBatchSize = 100;
 
     // Weight initialization:
     // https://machinelearningmastery.com/weight-initialization-for-deep-learning-neural-networks/
-    public Brain(LayerDefinition... layerDefinitions) {
+    public Brain(IntFunction<Vector> vectorConstructor,
+                 BiFunction<Integer, Integer, Matrix> matrixConstructor,
+                 LayerDefinition... layerDefinitions) {
         layers = new Layer[layerDefinitions.length];
-        layers[0] = new Layer(layerDefinitions[0]);
+        layers[0] = new Layer(layerDefinitions[0], vectorConstructor);
 
         for (int i = 1; i < size(); i++) {
             var currentLayerDefinition = layerDefinitions[i];
             int previousLayerSize = layers[i - 1].size();
             float min = (float) (-Math.sqrt(6 / Math.sqrt(previousLayerSize + currentLayerDefinition.size())));
             float maxExcl = -min;
-            layers[i] = new Layer(currentLayerDefinition, previousLayerSize, min, maxExcl);
+            layers[i] = new Layer(currentLayerDefinition, previousLayerSize, min, maxExcl, vectorConstructor, matrixConstructor);
         }
     }
 
@@ -57,7 +64,7 @@ public class Brain {
     }
 
     public Vector predict(Vector input) {
-        Layer curr = getInputLayer();
+        var curr = getInputLayer();
         curr.activate(input);
 
         for (int i = 1; i < size(); i++) {
@@ -67,10 +74,6 @@ public class Brain {
         }
 
         return getOutputLayer().getActivations();
-    }
-
-    public Vector predict(float... input) {
-        return predict(Vector.of(input));
     }
 
     public void train(TrainingExample[] trainingExamples) {
@@ -91,15 +94,15 @@ public class Brain {
     }
 
     private WeightBias[] backpropagate(TrainingExample trainingExample) {
-        WeightBias[] deltas = new WeightBias[size() - 1];
-        Vector output = predict(trainingExample.input());
-        Vector error = output.sub(trainingExample.target());  // Derivative of the cost function 1/2 * (o - t)²
-        Layer curr = getOutputLayer();
+        var deltas = new WeightBias[size() - 1];
+        var output = predict(trainingExample.input());
+        var error = output.sub(trainingExample.target());  // Derivative of the cost function 1/2 * (o - t)²
+        var curr = getOutputLayer();
 
         for (int i = outputLayerIndex() - 1; i >= 0; i--) {
-            Layer prev = getLayer(i);
-            Vector nablaBiases = curr.getNablaBiases(error, prev.getActivationFunction());
-            Matrix nablaWeights = nablaBiases.mult(prev.getActivations().toRowVector());
+            var prev = getLayer(i);
+            var nablaBiases = curr.getNablaBiases(error, prev.getActivationFunction());
+            var nablaWeights = nablaBiases.mult(prev.getActivations().toRowVector());
             deltas[i] = new WeightBias(nablaWeights, nablaBiases);
 
             if (i > 0) {
