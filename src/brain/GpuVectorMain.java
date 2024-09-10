@@ -2,7 +2,7 @@ package brain;
 
 import brain.domain.Brain;
 import brain.math.ActivationFunction;
-import brain.math.GpuMatrix;
+import brain.math.CpuMatrix;
 import brain.math.GpuVector;
 import brain.misc.LayerDefinition;
 import brain.misc.TrainingExample;
@@ -18,7 +18,7 @@ import java.io.IOException;
  * @author : Emilio Zottel (5AHIF)
  * @since : 13.11.2023, Mo.
  **/
-public class GpuMain extends PApplet {
+public class GpuVectorMain extends PApplet {
 
     private static final boolean WRITE_TO_FILE = false;
 
@@ -26,7 +26,7 @@ public class GpuMain extends PApplet {
 
     private final Brain brain = new Brain(
             GpuVector::new,
-            GpuMatrix::new,
+            CpuMatrix::new,
             new LayerDefinition(FOURIER_ORDER * 4, ActivationFunction.LINEAR),
             new LayerDefinition(32, ActivationFunction.LRELU),
             new LayerDefinition(128, ActivationFunction.LRELU),
@@ -49,7 +49,7 @@ public class GpuMain extends PApplet {
     private TrainingExample[] trainingExamples;
 
     public static void main(String[] args) {
-        PApplet.main(GpuMain.class, args);
+        PApplet.main(GpuVectorMain.class, args);
     }
 
     private static float[] fourierSeries(int order, float x, float y) {
@@ -69,7 +69,7 @@ public class GpuMain extends PApplet {
 
     @Override
     public void settings() {
-        var url = GpuMain.class.getResource(path);
+        var url = GpuVectorMain.class.getResource(path);
         file = new File(url.getFile().replace("%20", " "));
 
         try {

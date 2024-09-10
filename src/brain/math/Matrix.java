@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.IntConsumer;
@@ -34,23 +35,21 @@ public abstract class Matrix {
 
     public abstract Matrix sub(Matrix m);
 
+    public abstract Matrix div(float divisor);
+
     public abstract Matrix mult(float factor);
 
     public abstract Vector mult(Vector v);
 
     public abstract Matrix mult(Matrix m);
 
-    public abstract Matrix div(float divisor);
-
     public abstract Matrix multHadamard(Matrix m);
 
     public abstract Matrix transpose();
 
-    public abstract void setAll(float... values);
+    public abstract Matrix withEachRow(IntFunction<Vector> function);
 
     public abstract Vector getCol(int i);
-
-    public abstract Matrix withEachRow(IntFunction<Vector> function);
 
     public void setCol(int i, Vector values) {
         values.check(rows, "Vector size must match matrix row amount");
@@ -88,6 +87,18 @@ public abstract class Matrix {
         forEachRow(j -> setRow(j, function.apply(j)));
     }
 
+    public void setAll(float... values) {
+        if (values.length != cols * rows) {
+            throw new IllegalArgumentException("Amount of values must equal 'matrix column amount * matrix row amount'");
+        }
+
+        forEachRow(j -> setRow(j, CpuVector.of(Arrays.copyOfRange(values, j * cols, (j + 1) * cols))));
+        /*
+        for (int v = 0; v < values.length; v++) {
+            set(v % cols, v / cols, values[v]);
+        }
+        */
+    }
 
     public Matrix fillWithRandomValues(float min, float maxExclusive) {
         forEachRow((_, row) -> row.fillWithRandomValues(min, maxExclusive));

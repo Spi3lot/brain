@@ -1,6 +1,5 @@
 package brain.math;
 
-import java.util.Arrays;
 import java.util.function.IntFunction;
 
 /**
@@ -36,6 +35,11 @@ public class CpuMatrix extends Matrix {
         }
 
         return withEachRow(j -> getRow(j).sub(m.getRow(j)));
+    }
+
+    @Override
+    public Matrix div(float divisor) {
+        return withEachRow(j -> getRow(j).div(divisor));
     }
 
     @Override
@@ -76,11 +80,6 @@ public class CpuMatrix extends Matrix {
     }
 
     @Override
-    public Matrix div(float divisor) {
-        return withEachRow(j -> getRow(j).div(divisor));
-    }
-
-    @Override
     public Matrix multHadamard(Matrix m) {
         // cols are checked in Vector.mult()
         if (rows != m.rows) {
@@ -94,20 +93,6 @@ public class CpuMatrix extends Matrix {
     public Matrix transpose() {
         // Notice: Matrix constructor is reversed, normally it is used like 'new Matrix(cols, rows)'
         return new CpuMatrix(rows, cols).withEachRow(this::getCol);
-    }
-
-    @Override
-    public void setAll(float... values) {
-        if (values.length != cols * rows) {
-            throw new IllegalArgumentException("Amount of values must equal 'matrix column amount * matrix row amount'");
-        }
-
-        forEachRow(j -> setRow(j, CpuVector.of(Arrays.copyOfRange(values, j * cols, (j + 1) * cols))));
-        /*
-        for (int v = 0; v < values.length; v++) {
-            set(v % cols, v / cols, values[v]);
-        }
-        */
     }
 
     @Override

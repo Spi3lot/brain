@@ -9,14 +9,14 @@ import java.util.function.IntFunction;
 public class GpuVector extends Vector {
 
     static {
-        System.loadLibrary("vector");
+        System.loadLibrary("natives/vector");
     }
 
     public GpuVector(int size) {
         super(size);
     }
 
-    public GpuVector(float... values) {
+    private GpuVector(float[] values) {
         super(values);
     }
 
@@ -59,9 +59,6 @@ public class GpuVector extends Vector {
 
     @Override
     public native float dot(Vector v);
-
-    @Override
-    public native void setAll(Vector v);
 
     @Override
     public Vector withEach(IntFunction<Float> function) {

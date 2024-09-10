@@ -13,7 +13,7 @@ public class CpuVector extends Vector {
         super(size);
     }
 
-    public CpuVector(float... values) {
+    private CpuVector(float[] values) {
         super(values);
     }
 
@@ -90,12 +90,6 @@ public class CpuVector extends Vector {
         }
 
         return result;
-    }
-
-    @Override
-    public void setAll(Vector v) {
-        check(v.size());
-        setEach(v::get);
     }
 
     @Override

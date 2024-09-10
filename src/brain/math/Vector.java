@@ -60,8 +60,6 @@ public abstract class Vector {
 
     public abstract float dot(Vector v);
 
-    public abstract void setAll(Vector v);
-
     public abstract Vector withEach(IntFunction<Float> function);
 
     public float sum() {
@@ -96,6 +94,10 @@ public abstract class Vector {
         values[i] = value;
     }
 
+    public void setAll(Vector v) {
+        check(v.size());
+        setEach(v::get);
+    }
 
     public void setEach(IntFunction<Float> function) {
         for (int i = 0; i < size(); i++) {

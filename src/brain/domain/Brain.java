@@ -77,7 +77,7 @@ public class Brain {
     }
 
     public void train(TrainingExample[] trainingExamples) {
-        MiniBatch[] miniBatches = MiniBatch.shuffleAndChop(miniBatchSize, trainingExamples);
+        var miniBatches = MiniBatch.shuffleAndChop(miniBatchSize, trainingExamples);
 
         for (MiniBatch miniBatch : miniBatches) {
             WeightBias[] step = new WeightBias[size() - 1];
@@ -115,12 +115,18 @@ public class Brain {
     }
 
     private void add(WeightBias[] deltas) {
-        assert deltas.length == size() - 1;
+        if (deltas.length != size() - 1) {
+            throw new IllegalArgumentException(STR."Expected 'deltas.length' to be: \{size() - 1}\nActual: \{deltas.length}");
+        }
+
         forEachHiddenLayer((i, layer) -> layer.add(deltas[i - 1]));
     }
 
     private void sub(WeightBias[] deltas) {
-        assert deltas.length == size() - 1;
+        if (deltas.length != size() - 1) {
+            throw new IllegalArgumentException(STR."Expected 'deltas.length' to be: \{size() - 1}\nActual: \{deltas.length}");
+        }
+
         forEachHiddenLayer((i, layer) -> layer.sub(deltas[i - 1]));
     }
 

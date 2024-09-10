@@ -9,7 +9,7 @@ import java.util.function.IntFunction;
 public class GpuMatrix extends Matrix {
 
     static {
-        System.loadLibrary("matrix");
+        System.loadLibrary("natives/matrix");
     }
 
     public GpuMatrix(int cols, int rows) {
@@ -27,6 +27,9 @@ public class GpuMatrix extends Matrix {
     public native Matrix sub(Matrix m);
 
     @Override
+    public native Matrix div(float divisor);
+
+    @Override
     public native Matrix mult(float factor);
 
     @Override
@@ -36,16 +39,10 @@ public class GpuMatrix extends Matrix {
     public native Matrix mult(Matrix m);
 
     @Override
-    public native Matrix div(float divisor);
-
-    @Override
     public native Matrix multHadamard(Matrix m);
 
     @Override
     public native Matrix transpose();
-
-    @Override
-    public native void setAll(float... values);
 
     @Override
     public Vector getCol(int i) {

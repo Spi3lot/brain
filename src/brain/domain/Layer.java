@@ -120,11 +120,11 @@ public class Layer {
     }
 
     private void setActivationsLinear(Vector activationsLinear) {
-        this.activationsLinear.setAll(activationsLinear);
+        activationsLinear.setAll(activationsLinear);
     }
 
     private void setActivations(Vector activations) {
-        this.activations.setAll(activations);
+        activations.setAll(activations);
     }
 
     /**
